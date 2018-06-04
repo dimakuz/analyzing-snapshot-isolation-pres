@@ -612,12 +612,6 @@ The above graph is not splice-able: $\boxed{S}_\mathcal{G}$ observes write by $\
 \end{frame}
 
 \begin{frame}
-\begin{figure}
-	\includegraphics[scale=0.35]{fig5a}
-\end{figure}
-\end{frame}
-
-\begin{frame}
 A cycle in $DCG(\mathcal{G})$ is \textbf{critical} if:
 \begin{itemize}
 	\item Does not contain 2 occurrences of the same vertex
@@ -625,6 +619,15 @@ A cycle in $DCG(\mathcal{G})$ is \textbf{critical} if:
 	\item Any 2 anti dependency edges $(RW_\mathcal{G}\setminus \approx_\mathcal{G})$ are separated by at least one read $(WR_\mathcal{G}\setminus \approx_\mathcal{G})$ or write $(WW_\mathcal{G}\setminus \approx_\mathcal{G})$ dependency edges.
 \end{itemize}
 \end{frame}
+
+
+\begin{frame}
+\begin{figure}
+	\includegraphics[scale=0.35]{fig5a}
+\end{figure}
+This example contains a critical cycle with $$.\xrightarrow{S}.\xrightarrow{WR}.\xrightarrow{P}.\xrightarrow{RW}.$$
+\end{frame}
+
 
 \begin{frame}
 	\textit{Theorem:} \\
@@ -643,6 +646,48 @@ A cycle in $DCG(\mathcal{G})$ is \textbf{critical} if:
 \textbf{Theorem:} \\
 For any $\mathcal{G}$, we have $\mathcal{G} \in GraphSI \setminus GraphSER $ if $\mathcal{T}_\mathcal{G} \vDash INT$, $\mathcal{G}$ contains a cycle, and all its cycles have at least two adjacent anti-dependency edges.
 \end{frame}
+
+\begin{frame}
+	We use the last theorem to derive the static analysis.
+	\begin{itemize}
+		\item Assume set of \textbf{programs} $\mathcal{P}=\{P_1, P_2, \dots\}$, each defining code of a session resulting from chopping a single transaction.
+		\item Each $P_i$ is composed of $k_i$ \textbf{program pieces}
+		\item $W^i_j$ and $R^i_j$ sets of objects written or read by j-th piece of $P_i$ 
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{figure}
+	\includegraphics[scale=0.28]{fig4}
+\end{figure}
+For $transfer$ session we have 2 program pieces with
+\begin{itemize}
+	\item $W^1_1 = R^1_1 = {acct1}, W^1_2 = R^1_2 = {acct2}$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\begin{itemize}
+		\item History $\mathcal{H}$ \textbf{can be produced} by programs $\mathcal{P}$ if there's 1:1 correspondence between every session in $\mathcal{H}$ and program $P_i\in\mathcal{P}$, and the read/write sets of a program agree with the transaction.
+		\item Chopping is defined \textbf{correct} if every dependency graph $\mathcal{G}\in GraphSI$, where $\mathcal{H}_\mathcal{G}$ can be produced by $\mathcal{P}$ is splice-able.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	We check correctness of $\mathcal{P}$ using it's \textbf{static chopping graph} $SCG(\mathcal{P})$, and we also construct \textbf{successor}, \textbf{predecessor}, and \textbf{dependency} edges in similar fashion to $DCG(\mathcal{G})$
+\end{frame}
+
+\begin{frame}
+	The edge set of static graphs $SCG(\mathcal{P})$ over-approximate the edges set of the dynamic graphs $DCG(\mathcal{G})$ for corresponding to graphs $\mathcal{G}$ produced by programs $\mathcal{P}$. \\
+	Thus we get: \\
+	The chopping defined by $\mathcal{P}$ is correct if $SCG(\mathcal{P})$ contains no critical cycles.
+	\\ FIXME
+\end{frame}
+
+\begin{frame}
+	FIXME example fig5+6
+\end{frame}
+
 
 \begin{frame}
 \begin{center}
