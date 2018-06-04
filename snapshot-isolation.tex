@@ -702,21 +702,51 @@ For $transfer$ session we have 2 program pieces with
 \end{frame}
 
 \begin{frame}
-	\textbf{Robustness against SI} \\
-	Check if a given application running under \textbf{Serializability}, does not produce new histories when runs under \textbf{SI}... \\
-	i.e. code does not produce histories in $HistSI \setminus HistSER$
+	\textbf{Robustness against SI towards SER} \\
+	\begin{itemize}
+		\item Check if a given application running under \textbf{SI}, behaves the same as if it runs under \textbf{serializability} model.
+		\item Specifically, no histories in $HistSI \setminus HistSER$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\textit{Theorem:} \\
+	For any $\mathcal{G}$, we have $\mathcal{G} \in GraphSI \setminus GraphSER $ iff. $\mathcal{T}_\mathcal{G} \vDash INT$, $\mathcal{G}$ contains a cycle, and all its cycles have at least two adjacent anti-dependency edges.
+\end{frame}
+
+\begin{frame}
+	Static analysis:
+	\begin{itemize}
+		\item Assume code of transactions defined by set of programs $\mathcal{P}$ with given read and write sets.
+		\item Based on them, derive \textbf{static dependency graph}, over-approximating possible dependencies that can exist.
+		\item Check that static dependency graph contains no cycles with two adjacent anti-dependency edges.
+	\end{itemize}
 \end{frame}
 
 
 \begin{frame}
-\textit{Theorem:} \\
-For any $\mathcal{G}$, we have $\mathcal{G} \in GraphSI \setminus GraphSER $ if $\mathcal{T}_\mathcal{G} \vDash INT$, $\mathcal{G}$ contains a cycle, and all its cycles have at least two adjacent anti-dependency edges.
+	\textbf{Robustness against PSI towards SI} \\
+	\begin{itemize}
+		\item Check if a given application running under \textbf{PSI}, behaves the same as if it runs under \textbf{SI} model.
+		\item Specifically, no histories in $HistPSI \setminus HistSI$
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
-\begin{center}
-	Thank you!
-\end{center}
+	FIXME def ExecPSI \\
+	FIXME def GraphPSI
+\end{frame}
+
+\begin{frame}
+	\textit{Theorem:} \\
+	For any $\mathcal{G}$, we have $\mathcal{G} \in GraphPSI \setminus GraphSI $ iff. $\mathcal{T}_\mathcal{G} \vDash INT$, $\mathcal{G}$ contains at least one cycle with no adjacent anti-dependency edges, and all its cycles have at least two anti dependency edges.
+\end{frame}
+
+
+\begin{frame}
+	\begin{center}
+		Thank you!
+	\end{center}
 \end{frame}
 
 
