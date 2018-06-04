@@ -331,7 +331,7 @@
 \begin{frame}
 	Let $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$ be an execution, for $x \in Obj$ we define the following relations on $\mathcal{T}_\mathcal{X}$:
 	\begin{itemize}
-		\item \textbf{read-dependency}:
+		\item $WR_\mathcal{X}(x)$ \textbf{read-dependency}:
 		\begin{multline*}
 			T \xrightarrow{WR_\mathcal{X}(x)} S \Leftrightarrow \\
 			S \vdash read(x,n) \wedge T = max_{CO}\left( VIS^{-1}(S) \cap WriteTx_x \right)
@@ -343,7 +343,7 @@
 \begin{frame}
 	Let $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$ be an execution, for $x \in Obj$ we define the following relations on $\mathcal{T}_\mathcal{X}$:
 	\begin{itemize}
-		\item \textbf{write-dependency}:
+		\item $WW_\mathcal{X}(x)$ \textbf{write-dependency}:
 		\begin{multline*}
 		T \xrightarrow{WW_\mathcal{X}(x)} S \Leftrightarrow T \xrightarrow{CO}S \wedge T,S \in WriteTx_x
 		\end{multline*} \\
@@ -354,7 +354,7 @@
 \begin{frame}
 	Let $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$ be an execution, for $x \in Obj$ we define the following relations on $\mathcal{T}_\mathcal{X}$:
 	\begin{itemize}
-		\item \textbf{anti-dependency}:
+		\item $RW_\mathcal{X}(x)$ \textbf{anti-dependency}:
 		\begin{multline*}
 		T \xrightarrow{RW_\mathcal{X}(x)} S \Leftrightarrow \\
 		T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR_\mathcal{X}(x)}T \wedge T^\prime \xrightarrow{WW_\mathcal{X}(x)}S
@@ -432,25 +432,6 @@ A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, 
 	In other words, execution is serializable if it can be extended into an acyclic dependency graph.
 \end{frame}
 
-\begin{frame}
-Example:
-\begin{figure}
-	\includegraphics[scale=0.25]{fig2d}
-\end{figure}
-\begin{itemize}
-	\item Prohibited under \textbf{serializability}, and has a dependency graph cycle $ T_1 \xrightarrow{RW} T_2 \xrightarrow{RW} T_1 $.
-	\item However, allowed under \textbf{SI}
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-In contrast, following is \emph{not} allowed under SI:
-\begin{figure}
-	\includegraphics[scale=0.2]{fig2b}
-	\includegraphics[scale=0.2]{fig2c}
-\end{figure}
-contain cycles without adjacent anti dependencies.
-\end{frame}
 
 \begin{frame}
 	\textit{Theorem:} \\
@@ -477,7 +458,28 @@ contain cycles without adjacent anti dependencies.
 		HistSI = \{ \mathcal{H} \mid \exists WR, WW, RW. (\mathcal{H}, WR, WW, RW) \in GraphSI \}
 	$$
 	\\
-	In other words, $\mathcal{H} \in HistSI$ if $\mathcal{H}$ can be extended to a dependency graph satisfying $GraphSI$ 
+	Similarly, $\mathcal{H} \in HistSI$ if $\mathcal{H}$ can be extended to a dependency graph satisfying $GraphSI$ 
+\end{frame}
+
+
+\begin{frame}
+Example:
+\begin{figure}
+	\includegraphics[scale=0.25]{fig2d}
+\end{figure}
+\begin{itemize}
+	\item Prohibited under \textbf{serializability}, and has a dependency graph cycle $ T_1 \xrightarrow{RW} T_2 \xrightarrow{RW} T_1 $.
+	\item However, allowed under \textbf{SI}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+In contrast, following is \emph{not} allowed under SI:
+\begin{figure}
+\includegraphics[scale=0.2]{fig2b}
+\includegraphics[scale=0.2]{fig2c}
+\end{figure}
+contain cycles without adjacent anti dependencies.
 \end{frame}
 
 \begin{frame}
@@ -534,7 +536,7 @@ Proof sketch: \\
 			 CO = {} & (((SO \cup WR \cup WW); RW?) \cup R)^+
 		\end{aligned}
 	$$
-	are a solution to the system of inequalities in the previous requirements. They also are the smallest solution to the system for which $R \subseteq CO$.
+	are a solution to the system of inequalities in the previous slide. They also are the smallest solution to the system for which $R \subseteq CO$.
 \end{frame}
 
 \begin{frame}
@@ -560,7 +562,7 @@ Proof sketch: \\
 	\textbf{Transaction Chopping under SI:}
 	\begin{itemize}
 		\item We'll derive a static analysis that checks if transactions can be chopped into smaller sessions
-		\item The analysis must check that any execution with chopped transaction does not exhibit new behaviors.
+		\item The analysis will suggest an optimized program provided any execution with chopped transactions does not exhibit new behaviors.
 	\end{itemize}
 \end{frame}
 
@@ -650,45 +652,64 @@ We use the last theorem to derive the static analysis.
 \end{figure}
 For $transfer$ session we have 2 program pieces with
 \begin{itemize}
-\item $W^1_1 = R^1_1 = {acct1}, W^1_2 = R^1_2 = {acct2}$
+\item $W^1_1 = R^1_1 = \{acct1\}, W^1_2 = R^1_2 = \{acct2\}$
 \end{itemize}
 \end{frame}
 
 \begin{frame}
-\begin{itemize}
-\item History $\mathcal{H}$ \textbf{can be produced} by programs $\mathcal{P}$ if there's 1:1 correspondence between every session in $\mathcal{H}$ and program $P_i\in\mathcal{P}$, and the read/write sets of a program agree with the transaction.
-\item Chopping is defined \textbf{correct} if every dependency graph $\mathcal{G}\in GraphSI$, where $\mathcal{H}_\mathcal{G}$ can be produced by $\mathcal{P}$ is splice-able.
-\end{itemize}
+	\begin{itemize}
+		\item History $\mathcal{H}$ \textbf{can be produced} by programs $\mathcal{P}$ if there's 1:1 correspondence between every session in $\mathcal{H}$ and program $P_i\in\mathcal{P}$, and each transaction in the session corresponds to respective program piece, along with its read/write sets.
+		\item Chopping is defined \textbf{correct} if every dependency graph $\mathcal{G}\in GraphSI$, where $\mathcal{H}_\mathcal{G}$ can be produced by $\mathcal{P}$ is splice-able.
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
-We check correctness of $\mathcal{P}$ using it's \textbf{static chopping graph} $SCG(\mathcal{P})$, and we also construct \textbf{successor}, \textbf{predecessor}, and \textbf{dependency} edges in similar fashion to $DCG(\mathcal{G})$
+	We check correctness of chopping $\mathcal{P}$ using it's \textbf{static chopping graph} $SCG(\mathcal{P})$.\\
+	Graph's nodes are program pieces in form of $(i, j)$ and the edge $(i_1, j_1), (i_2, j_2)$ is present if:
+	\begin{itemize}
+		\item $i_1 = i_2$ and:
+		\begin{itemize}
+			\item $j_1 < j_2$ (a \textbf{successor} edge)
+			\item $j_1 > j_2$ (a \textbf{predecessor} edge)
+		\end{itemize}
+		\item $i_1 \ne i_2$ and:
+		\begin{itemize}
+			\item $W^{i_1}_{j_1}\cap R^{i_2}_{j_2} \ne \emptyset$ (a \textbf{read dependency} edge)
+			\item $W^{i_1}_{j_1}\cap W^{i_2}_{j_2} \ne \emptyset$ (a \textbf{write dependency} edge)
+			\item $R^{i_1}_{j_1}\cap W^{i_2}_{j_2} \ne \emptyset$ (an \textbf{anti dependency} edge)
+		\end{itemize}
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
-The edge set of static graphs $SCG(\mathcal{P})$ over-approximate the edges set of the dynamic graphs $DCG(\mathcal{G})$ for corresponding to graphs $\mathcal{G}$ produced by programs $\mathcal{P}$. \\
-Thus we get: \\
-The chopping defined by $\mathcal{P}$ is correct if $SCG(\mathcal{P})$ contains no critical cycles.
-\\ FIXME
+	\begin{itemize}
+		\item The edge set of static graphs $SCG(\mathcal{P})$ over-approximate the edges set of the dynamic graphs $DCG(\mathcal{G})$ for corresponding to graphs $\mathcal{G}$ produced by programs $\mathcal{P}$.
+		\item The chopping defined by $\mathcal{P}$ is correct if $SCG(\mathcal{P})$ contains no critical cycles (as defined for dynamic graphs).
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
-\begin{figure}
-\includegraphics[scale=0.28]{fig56}
-\end{figure}
+	\begin{figure}
+		\includegraphics[scale=0.28]{fig56}
+	\end{figure}
 \end{frame}
-
 
 \subsection{Robustness}
 
 \begin{frame}
+	\textbf{Robustness}: \\
+	We'll derive an analysis that check where an application behaves the same way under a weak consistency model as it does under a strong one.
+\end{frame}
+
+\begin{frame}
 	\textbf{Robustness against SI} \\
-	Check if a given application running under \textbf{Serializability}, does not produce new histories when runs under \textbf{SI}
+	Check if a given application running under \textbf{Serializability}, does not produce new histories when runs under \textbf{SI}... \\
+	i.e. code does not produce histories in $HistSI \setminus HistSER$
 \end{frame}
 
 
 \begin{frame}
-\textbf{Theorem:} \\
+\textit{Theorem:} \\
 For any $\mathcal{G}$, we have $\mathcal{G} \in GraphSI \setminus GraphSER $ if $\mathcal{T}_\mathcal{G} \vDash INT$, $\mathcal{G}$ contains a cycle, and all its cycles have at least two adjacent anti-dependency edges.
 \end{frame}
 
