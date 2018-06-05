@@ -733,8 +733,46 @@ For $transfer$ session we have 2 program pieces with
 \end{frame}
 
 \begin{frame}
-	FIXME def ExecPSI \\
-	FIXME def GraphPSI
+	\textit{Definition:}\\
+	Sets of executions and histories \textbf{allowed by parallel SI} are:
+	$$
+	\begin{aligned}
+	ExecPSI = {} &
+	\begin{aligned}
+		\{
+			\mathcal{X} \mid
+			\mathcal{X} \vDash & INT \wedge EXT \wedge SESSION \wedge \\
+			& TRANSVIS \wedge NOCONFLICT
+		\}
+	\end{aligned}
+	\\
+	HistPSI = {} & \{ \mathcal{H} \mid \exists VIS, CO. (\mathcal{H}, VIS, CO) \in ExecPSI \}
+	\end{aligned}
+	$$ \\
+	$TRANSVIS$ axiom ensures that transactions ordered by $VIS$ are observed by others in this order. However, allows transactions unrelated by $VIS$ to be observed in different orders; in particular, allows \textit{long fork } anomaly.
+\end{frame}
+
+\begin{frame}
+	\textit{Theorem:} \\
+	Let
+	\begin{multline*}
+		GraphPSI = \{ \mathcal{G} \mid \left( \mathcal{T}_\mathcal{G} \vDash INT \right) \wedge \\
+		\left(
+			\left(
+				\left(
+					SO_\mathcal{G} \cup WR_\mathcal{G} \cup WW_\mathcal{G}
+				\right)^+; RW_\mathcal{G}?
+			\right) \text{is irreflexive}
+		\right)
+		\}
+	\end{multline*}
+	Then
+	$$
+		\begin{aligned}
+			HistPSI = \{ \mathcal{H} \mid & \exists WR,WW,RW.
+			& (\mathcal{H}, WR, WW, RW) \in GraphPSI \}	
+		\end{aligned}
+	$$
 \end{frame}
 
 \begin{frame}
