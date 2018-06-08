@@ -44,7 +44,7 @@
 {Analyzing Snapshot Isolation}
 
 \author[Andrea Cerone, Alexey Gotsman] % (optional, use only with lots of authors)
-{\textit{Andrea Cerone \and Alexey Gotsman \\ \footnotesize presented by Dima Kuznetsov}}
+{\textit{Andrea Cerone \and Alexey Gotsman}}
 
 
 
@@ -52,7 +52,7 @@
 {IMDEA Software Institute}
 
 \date[PODC 2016] % (optional, should be abbreviation of conference name)
-{PODC 2016}
+{PODC 2016 \\ \hfill \\ \footnotesize presented by Dima Kuznetsov}
 
 \subject{Theoretical Computer Science}
 % This is only inserted into the PDF information catalog. Can be left
@@ -90,20 +90,20 @@
 	\titlepage
 \end{frame}
 
-\begin{frame}{Outline}
+\begin{frame}{Agenda}
 	\tableofcontents
 \end{frame}
 
 \section{Introduction}
 
-\begin{frame}{Intro}
+\begin{frame}
 	\begin{itemize}
 		\item We focus on \emph{Snapshot Isolation} presented in the last talk
 		\item ... same context of DBMS and transactional memory systems
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{Intro}
+\begin{frame}
 	\begin{itemize}
 		\item DBMS typically offer various guarantees for transaction management
 		\item Each mode exhibits different \emph{anomalies}
@@ -115,38 +115,25 @@
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{Snapshot Isolation}
-	FIXME
-	\textbf{Snapshot Isolation} - originally specified as operational model:
-	\begin{itemize}
-		\item When transaction $ T $ begins, $ snapshot_T $ is taken
-		\item All reads in $ T $ read values from $ snapshot_T $
-		\item All writes in $ T $ write to transient write-set
-		\item T commits only if passes write conflict check:
-		\begin{itemize}
-			\item No object in $T$'s write-set was updated by other transactions since $snapshot_T$ was taken
-		\end{itemize}
-	\end{itemize}	
+\begin{frame}
+	From Wikipedia\footnote{https://en.wikipedia.org/wiki/Snapshot\_isolation\#Definition}: \\
+	\begin{quotation}
+		A transaction executing under \textbf{snapshot isolation} appears to operate on a personal snapshot of the database, taken at the start of the transaction. When the transaction concludes, it will successfully commit only if the values updated by the transaction have not been changed externally since the snapshot was taken.
+	\end{quotation}
 \end{frame}
 
-%\begin{frame}{Example}
-%	The operational model allows write-skew anomalies
-%	\begin{figure}
-%		\includegraphics[scale=0.22]{write-skew}
-%	\end{figure}
-%\end{frame}
-
+\begin{frame}
+	We'll focus on \textit{\textbf{strong session} Snapshot Isolation}: \\
+	Transactions are grouped into sessions, a transaction's snapshot is expected to include \textit{all preceding transactions} of the same session.
+\end{frame}
 
 \section{Snapshot Isolation}
 \subsection{Definitions}
-\begin{frame}{Definitions}
-	We'll start by formulating a declarative definition of Snapshot Isolation.
-\end{frame}
 
 \begin{frame}
 	We'll use a lot of notation similar to Daniel's talk two weeks ago
 	\begin{itemize}
-		\item $ Obj =  \{ x, y, \dots \} $ - objects in the data-set
+		\item $ Obj =  \{ x, y, \dots \} $ - objects in the data set
 		\item $ Event = \{ e, f, \dots \} $ - transaction events
 		\item $ Op = \{ read(x,n), write(x, n) \mid x \in Obj, n \in \mathbb{Z}\} $ 
 		\item $ op: Event \rightarrow Op $
@@ -170,10 +157,10 @@
 \end{frame}
 
 \begin{frame}
-	We elide treatment of:
+	Assumptions:
 	\begin{itemize}
-		\item aborted transactions - all transactions in any history are committed.
-		\item infinite computations - histories are always finite.
+		\item All transactions commit (aborted ones do not affect the history)
+		\item All histories are finite (no infinite computations)
 	\end{itemize}
 \end{frame}
 
@@ -185,7 +172,7 @@
 
 \begin{frame}
 	\begin{itemize}
-		\item We'll use $ (T, S) \in VIS$ and $ T \overset{VIS}{\longrightarrow} S $ interchangeably for $VIS$ and other relations.
+		\item We'll use $ (T, S) \in VIS$ and $ T \xrightarrow{VIS} S $ interchangeably for $VIS$ and other relations.
 		\item For $\mathcal{H}=(\mathcal{T}, SO)$ we'll shorten $(\mathcal{T}, SO, VIS, CO)$ to $(\mathcal{H}, VIS, CO)$
 	\end{itemize}
 \end{frame}
@@ -193,29 +180,10 @@
 \begin{frame}
 	For the relations defined in abstract execution:
 	\begin{itemize}
-		\item $ T \overset{VIS}{\longrightarrow} S $ means that $T$ is included in $S$'s snapshot.
-		\item $ T \overset{CO}{\longrightarrow} S $ means that $T$ is committed before $S$.
+		\item $ T \xrightarrow{VIS} S $ means that $T$ is included in $S$'s snapshot.
+		\item $ T \xrightarrow{CO} S $ means that $T$ is committed before $S$.
 		\item $ VIS \subseteq CO $ makes sure that snapshots include only already committed transactions.
 	\end{itemize}
-\end{frame}
-
-\begin{frame}
-	For a set $ A $ and a total order $ R \subseteq A \times A $
-	\begin{itemize}
-		\item $max_R(A) = \{ a \mid \forall b \in A: a = b \vee (b, a) \in R \} $
-		\item $min_R(A) = \{ a \mid \forall b \in A: a = b \vee (a, b) \in R \} $
-	\end{itemize}
-\end{frame}
-
-\begin{frame}
-	For $T = (E, po)$ we'll use:
-	\begin{itemize}
-		\item $ T \vdash write(x,n) $ if $T$ writes to $x$ and $n$ is s.t.
-		$$ op\left(max_{po}\{e \mid op\left(e\right)  = write\left(x, \_ \right) \} \right) = write(x,n)$$
-		\item $ T \vdash read(x,n) $ if $T$ reads $x$ before writing to is and $n$ is s.t.
-		$$ op\left(min_{po}\{e \mid op\left(e\right)  = \_\left(x, \_ \right) \} \right) = read(x,n)$$
-	\end{itemize}
-	We'll also use $ WriteTx_x = \{ T \mid T \vdash write(x,\_)\}$
 \end{frame}
 
 \begin{frame}
@@ -240,10 +208,15 @@
 		\textsc{Int} - ensures that a read event $e$ on object $x$ returns the same value a as the last write or read on $x$ in the same transaction.
 		\begin{multline*}
 			\forall (E,po)\in \mathcal{T} . \forall e \in E . \forall x,n: \\
-				op(e) = read(x,n) \wedge \{f\mid op(f) = \_(x,\_)\wedge f \overset{po}{\longrightarrow} e\} \ne \emptyset \Rightarrow \\
-				op\left(max_{po}\{f \mid op\left(f\right) = \_ \left(x, \_\right) \wedge f \overset{po}{\longrightarrow} e\}\right) = \_(x,n)
+				op(e) = read(x,n) \wedge \{f\mid op(f) = \_(x,\_)\wedge f \xrightarrow{po} e\} \ne \emptyset \Rightarrow \\
+				op\left(max_{po}\{f \mid op\left(f\right) = \_ \left(x, \_\right) \wedge f \xrightarrow{po} e\}\right) = \_(x,n)
 		\end{multline*}
 	\end{definition}
+	Where ...
+	\begin{itemize}
+		\item $max_R(A) = \{ a \mid \forall b \in A: a = b \vee (b, a) \in R \} $
+		\item $min_R(A) = \{ a \mid \forall b \in A: a = b \vee (a, b) \in R \} $
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -258,6 +231,9 @@
 	Where ...
 	\begin{itemize}
 		\item $R^{-1}(a) = \{ b \mid (b, a) \in R \}$
+		\item $ WriteTx_x = \{ T \mid T \vdash write(x,\_)\}$
+		\item $ T \vdash write(x,n) $ if $T$ writes to $x$ and $n$ is the final value of $x$.
+		\item $ T \vdash read(x,n)$ if $T$ reads from $x$ and $n$ is the value of $x$ at the first read.
 	\end{itemize}
 \end{frame}
 
@@ -272,6 +248,9 @@
 	\begin{figure}
 		\includegraphics[scale=0.3]{fig2a}
 	\end{figure}
+	\begin{example}
+		$T_1$ ordered after $T_2$ by $SO$ (therefore by $VIS$ and $CO$), $x$ must contain 1 in $T_2$.
+	\end{example}
 \end{frame}
 
 \begin{frame}
@@ -290,6 +269,9 @@
 	\begin{figure}
 		\includegraphics[scale=0.3]{fig2c}
 	\end{figure}
+	\begin{example}
+		Consider $T_1$ commits before $T_2$, then since $T_4$'s snapshot contains $T_2$ (due to $VIS$), it must include $T_1$ as well
+	\end{example}
 \end{frame}
 
 \begin{frame}
@@ -299,7 +281,7 @@
 		\forall T,S \in \mathcal{T}. \forall x,n . \\
 		\left( T,S \in WriteTx_x \wedge T \ne S \right)
 		\Rightarrow
-		\left( T \overset{VIS}{\longrightarrow} S \vee S \overset{VIS}{\longrightarrow} T \right)
+		\left( T \xrightarrow{VIS} S \vee S \xrightarrow{VIS} T \right)
 		\end{multline*}
 	\end{definition}
 \end{frame}
@@ -309,6 +291,9 @@
 	\begin{figure}
 		\includegraphics[scale=0.3]{fig2b}
 	\end{figure}
+	\begin{example}
+		$T_1$ and $T_2$ concurrently increment $acct$ object, but neither $T_1\xrightarrow{VIS} T_2$ nor $T_2 \xrightarrow{VIS} T_1$.
+	\end{example}
 \end{frame}
 
 \begin{frame}
@@ -323,6 +308,9 @@
 	\begin{figure}
 		\includegraphics[scale=0.25]{fig2d}
 	\end{figure}
+	\begin{example}
+		With \textsc{TotalVis}, either $T_1$ or $T_2$ would have to be aware of the other, and we won't be able to read stale values.
+	\end{example}
 \end{frame}
 
 \subsection{Dependency Graphs}
@@ -342,7 +330,7 @@
 			S \vdash read(x,n) \wedge T = max_{CO}\left( VIS^{-1}(S) \cap WriteTx_x \right)
 		\end{multline*}
 	\end{definition}
-	Informally: T $ \xrightarrow{WR_\mathcal{X}(x)} S $ means that $S$ reads $T$'s write to $x$.
+	Informally, T $ \xrightarrow{WR_\mathcal{X}(x)} S $ means that $S$ reads $T$'s write to $x$.
 \end{frame}
 
 \begin{frame}
@@ -352,7 +340,7 @@
 			T \xrightarrow{WW_\mathcal{X}(x)} S \Leftrightarrow T \xrightarrow{CO}S \wedge T,S \in WriteTx_x
 		$$
 	\end{definition}
-	Informally: T $ \xrightarrow{WW_\mathcal{X}(x)} S $ means that $S$ overwrites $T$'s write to $x$.
+	Informally, T $ \xrightarrow{WW_\mathcal{X}(x)} S $ means that $S$ overwrites $T$'s write to $x$.
 \end{frame}
 
 
@@ -364,11 +352,20 @@
 			T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR_\mathcal{X}(x)}T \wedge T^\prime \xrightarrow{WW_\mathcal{X}(x)}S
 		\end{multline*}
 	\end{definition}
-	Informally: T $ \xrightarrow{RW_\mathcal{X}(x)} S $ means that $S$ overwrites the write to $x$ read by $T$.
+	Informally, T $ \xrightarrow{RW_\mathcal{X}(x)} S $ means that $S$ overwrites the write to $x$ read by $T$.
 \end{frame}
 
 \begin{frame}
-	FIXME add example
+	\begin{figure}
+		\includegraphics[scale=0.3]{fig2b}
+	\end{figure}
+	\begin{example}
+		\begin{itemize}
+			\item $T_3$ reads $acct$ from $T_2$'s write $\Rightarrow T_2 \xrightarrow{WR(acct)} T_3$
+			\item $T_2$ overwrites $acct$ written in $T_1$ $\Rightarrow T_1 \xrightarrow{WW(acct)} T_2$
+			\item Both $T_1$ and $T_2$ overwrite $acct$'s initial value read by both, $T_1 \xrightarrow{RW(acct)} T_2$ and $T_2 \xrightarrow{RW(acct)} T_1$.
+		\end{itemize}
+	\end{example}
 \end{frame}
 
 \begin{frame}
@@ -466,14 +463,13 @@
 
 
 \begin{frame}
-Example:
-\begin{figure}
-	\includegraphics[scale=0.25]{fig2d}
-\end{figure}
-\begin{itemize}
-	\item Prohibited under \textbf{serializability}, and has a dependency graph cycle $ T_1 \xrightarrow{RW} T_2 \xrightarrow{RW} T_1 $.
-	\item However, allowed under \textbf{SI}
-\end{itemize}
+	\begin{figure}
+		\includegraphics[scale=0.25]{fig2d}
+	\end{figure}
+	\begin{itemize}
+		\item Prohibited under \textbf{serializability}, and has a dependency graph cycle $ T_1 \xrightarrow{RW} T_2 \xrightarrow{RW} T_1 $.
+		\item However, allowed under \textbf{SI}
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -486,37 +482,32 @@ contain cycles without adjacent anti dependencies.
 \end{frame}
 
 \begin{frame}
-	To prove it we'll show a stronger result: \\
-	\begin{enumerate}
-		\item \textbf{Soundness:} $ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $ 
-		\item \textbf{Completeness:} $ \forall \mathcal{X} \in ExecSI. graph(\mathcal{X}) \in GraphSI$
-	\end{enumerate}
+	To prove the previous theorem we'll show a stronger result:
+	\begin{theorem}
+		\begin{enumerate}
+			\item \textbf{Soundness:} $ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $ 
+			\item \textbf{Completeness:} $ \forall \mathcal{X} \in ExecSI. graph(\mathcal{X}) \in GraphSI$
+		\end{enumerate}
+	\end{theorem}
 	The \textit{completeness} closely follows from existing results\footnote{Making Snapshot Isolation Serializable, 2005, A. Fekete et al}. We will focus on the \textit{soundness}.
 	
 \end{frame}
 
 \begin{frame}
-Proof sketch: \\
-
-\begin{itemize}
-	\item Construct a basic \textbf{pre-execution} from $\mathcal{G}$
-	\item Iteratively extend it until satisfies execution definition
-\end{itemize}
-
+	\begin{block}{Objective}
+		\textbf{Soundness:} $ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $ 	
+	\end{block}
+	\begin{block}{Proof sketch}
+		\begin{itemize}
+			\item Construct a basic \textbf{pre-execution} from $\mathcal{G}$
+			\item Iteratively extend it until satisfies execution definition
+		\end{itemize}		
+	\end{block}
 \end{frame}
 
 \begin{frame}
 	\begin{definition}
 		A tuple $\mathcal{P} = (\mathcal{T}, SO, VIS, CO) $ is a \textbf{pre-execution} if it satisfies all the conditions of being an \emph{execution}, except $CO$ is a \textit{strict partial order} that may not be total.
-	\end{definition}
-	\begin{definition}
-		We let $PreExecSI$ be the set of pre-executions satisfying the SI axioms:
-		$$
-			\begin{aligned}
-				PreExecSI = \{ \mathcal{P} \mid \mathcal{P} \vDash & INT \wedge EXT \wedge SESSION \wedge \\
-																   & PREFIX \wedge NOCONFLICT \}
-			\end{aligned}
-		$$
 	\end{definition}
 	Where ...
 	\begin{itemize}
@@ -525,16 +516,28 @@ Proof sketch: \\
 \end{frame}
 
 \begin{frame}
+	\begin{definition}
+		We let $PreExecSI$ be the set of pre-executions satisfying the SI axioms:
+		$$
+		\begin{aligned}
+			PreExecSI = \{ \mathcal{P} \mid \mathcal{P} \vDash & INT \wedge EXT \wedge SESSION \wedge \\
+			& PREFIX \wedge NOCONFLICT \}
+		\end{aligned}
+		$$
+	\end{definition}
+\end{frame}
+
+\begin{frame}
 	\begin{itemize}
-		\item For a given dep. graph $\mathcal{G} = (\mathcal{H}, WR, WW, RW)$, let $\mathcal{P} = (\mathcal{H}, VIS, CO)$ a respective pre-execution.
-		\item To conform with $\mathcal{G}$ we require that $VIS,CO$ hold: \\
-			\begin{align}
+		\item Consider $\mathcal{G} = (\mathcal{H}, WR, WW, RW)$, let $\mathcal{P} = (\mathcal{H}, VIS, CO)$ a respective pre-execution.
+		\item $VIS,CO$ must hold the following to conform with $\mathcal{G}$ \\
+			\begin{align*}
 				SO \cup WR \cup WW & \subseteq VIS \\
 				CO; VIS & \subseteq VIS \\
 				VIS & \subseteq CO \\
 				CO; CO & \subseteq CO \\
 				VIS; RW & \subseteq CO
-			\end{align}
+			\end{align*}
 	\end{itemize}
 \end{frame}
 
@@ -562,7 +565,7 @@ Proof sketch: \\
 \end{frame}
 
 \begin{frame}
-	\begin{proof}
+	\begin{proof}[Proof outline]
 		Let $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW) \in GraphSI$
 		\begin{itemize}
 			\item Define $\mathcal{P}_0$ derived from the last lemma by fixing $R_0 = \emptyset$.
@@ -594,7 +597,7 @@ Proof sketch: \\
 	\begin{definition}
 		For history $\mathcal{H}$, let
 		$$ \approx_\mathcal{H} = SO_\mathcal{H} \cup SO^{-1}_\mathcal{H} \cup \{ (T,T) \mid T \in \mathcal{T}_\mathcal{H}\}$$
-		be the equivalence relation grouping transactions from same session.
+		the equivalence relation grouping transactions from same session.
 	\end{definition}
 \end{frame}
 
@@ -610,7 +613,7 @@ Proof sketch: \\
 		\end{aligned}
 		$$	
 	\end{definition}
-	Informally $\boxed{T}_\mathcal{H}$ is the result of splicing all transactions in session of $T$ into the same transaction.
+	Informally, $\boxed{T}_\mathcal{H}$ is the result of splicing all transactions in session of $T$ into the same transaction.
 \end{frame}
 
 \begin{frame}
@@ -626,11 +629,18 @@ Proof sketch: \\
 \end{frame}
 
 \begin{frame}
-Example, let graph $\mathcal{G}$:
-\begin{figure}
-	\includegraphics[scale=0.28]{fig4}
-\end{figure}
-The above graph is not splice-able: $\boxed{S}_\mathcal{G}$ observes write by $\boxed{T}_\mathcal{G}$ to $acct1$ but not to $acct2$.
+	Consider graph $\mathcal{G}$:
+	\begin{figure}
+		\includegraphics[scale=0.28]{fig4}
+	\end{figure}
+	\begin{example}
+		The above graph is not spliceable:
+		\begin{itemize}
+			\item $T^\prime \xrightarrow{VIS} S^\prime$
+			\item $\neg T \xrightarrow{VIS} S$
+			\item $\boxed{T}_\mathcal{G} \xrightarrow{WR(acct1)} \boxed{S}_\mathcal{G}$ but $\neg \boxed{T}_\mathcal{G} \xrightarrow{WR(acct2)} \boxed{S}_\mathcal{G}$
+		\end{itemize}
+	\end{example}
 \end{frame}
 
 \begin{frame}
@@ -646,28 +656,32 @@ The above graph is not splice-able: $\boxed{S}_\mathcal{G}$ observes write by $\
 \end{frame}
 
 \begin{frame}
-\begin{definition}
-	A cycle in $DCG(\mathcal{G})$ is \textbf{critical} if:
-	\begin{itemize}
-		\item Does not contain 2 occurrences of the same vertex 
-		\item Contains 3 consecutive edges in form of \textsl{conflict-predecessor-conflict}
-		\item Any 2 anti dependency edges $(RW_\mathcal{G}\setminus \approx_\mathcal{G})$ are separated by at least one read $(WR_\mathcal{G}\setminus \approx_\mathcal{G})$ or write $(WW_\mathcal{G}\setminus \approx_\mathcal{G})$ dependency edge
-	\end{itemize}
-\end{definition}
+	\begin{definition}
+		A cycle in $DCG(\mathcal{G})$ is \textbf{critical} if:
+		\begin{itemize}
+			\item Does not contain 2 occurrences of the same vertex 
+			\item Contains 3 consecutive edges in form of \textsl{conflict-predecessor-conflict}
+			\item Any 2 anti dependency edges $(RW_\mathcal{G}\setminus \approx_\mathcal{G})$ are separated by at least one read $(WR_\mathcal{G}\setminus \approx_\mathcal{G})$ or write $(WW_\mathcal{G}\setminus \approx_\mathcal{G})$ dependency edge
+		\end{itemize}
+	\end{definition}
 \end{frame}
 
 
 \begin{frame}
-\begin{figure}
-	\includegraphics[scale=0.35]{fig5a}
-\end{figure}
-This example contains a critical cycle with $$.\xrightarrow{S}.\xrightarrow{WR}.\xrightarrow{P}.\xrightarrow{RW}.$$
+	Consider $\mathcal{G}$
+	\begin{figure}
+		\includegraphics[scale=0.25]{fig4}
+	\end{figure}
+	\begin{example}
+		$DCG(\mathcal{G})$ contains a critical cycle:
+		$$ T^\prime \xrightarrow{WR_\mathcal{G}} S^\prime \xrightarrow{SO_\mathcal{G}} S \xrightarrow{RW_\mathcal{G}} T \xrightarrow{SO^{-1}_\mathcal{G}} T^\prime$$
+	\end{example}
 \end{frame}
 
 
 \begin{frame}
 	\begin{theorem}
-		For $\mathcal{G} \in GraphSI$, if $DCG(\mathcal{G})$ contains no critical cycles, then $\mathcal{G}$ is splice-able.
+		For $\mathcal{G} \in GraphSI$, if $DCG(\mathcal{G})$ contains no critical cycles, then $\mathcal{G}$ is spliceable.
 	\end{theorem}
 \end{frame}
 
@@ -682,13 +696,17 @@ We use the last theorem to derive the static analysis.
 \end{frame}
 
 \begin{frame}
-\begin{figure}
-\includegraphics[scale=0.28]{fig4}
-\end{figure}
-For the above we have 4 \textit{programs}, one for each session. Each transaction is a \textbf{program piece}. For \texttt{transfer} session we have 2 program pieces with
-\begin{itemize}
-\item $W^1_1 = R^1_1 = \{acct1\}, W^1_2 = R^1_2 = \{acct2\}$
-\end{itemize}
+	\begin{figure}
+		\includegraphics[scale=0.28]{fig4}
+	\end{figure}
+	\begin{example}
+		We have 4 \textit{programs}, one for each session. Each transaction is a \textit{program piece}. \\
+		For \texttt{transfer} session we have 2 program pieces with
+		\begin{itemize}
+			\item $T^\prime: W^1_1 = R^1_1 = \{acct1\}$
+			\item $T: W^1_2 = R^1_2 = \{acct2\}$
+		\end{itemize}
+	\end{example}
 \end{frame}
 
 \begin{frame}
