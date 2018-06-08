@@ -323,35 +323,32 @@
 
 \begin{frame}
 	\begin{definition}
-		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define \textbf{read-dependency} $WR_\mathcal{X}(x)$ over $\mathcal{T}_\mathcal{X}$ as:
-		\begin{multline*}
-			T \xrightarrow{WR_\mathcal{X}(x)} S \Leftrightarrow \\
-			S \vdash read(x,n) \wedge T = max_{CO}\left( VIS^{-1}(S) \cap WriteTx_x \right)
-		\end{multline*}
-	\end{definition}
-	Informally, T $ \xrightarrow{WR_\mathcal{X}(x)} S $ means that $S$ reads $T$'s write to $x$.
-\end{frame}
+		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define:
+		\begin{itemize}
+			\item<1> \textbf{read-dependency} $WR_\mathcal{X}(x)$ as:
+				\begin{multline*}
+					T \xrightarrow{WR_\mathcal{X}(x)} S \Leftrightarrow \\
+					S \vdash read(x,n) \wedge T = max_{CO}\left( VIS^{-1}(S) \cap WriteTx_x \right)
+				\end{multline*}
+			\item<2> \textbf{write-dependency} $WW_\mathcal{X}(x)$ as:
+				$$
+				T \xrightarrow{WW_\mathcal{X}(x)} S \Leftrightarrow T \xrightarrow{CO}S \wedge T,S \in WriteTx_x
+				$$
+			\item<3> \textbf{anti-dependency} $RW_\mathcal{X}(x)$ as:
+				$$
+				T \xrightarrow{RW_\mathcal{X}(x)} S \Leftrightarrow
+				T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR_\mathcal{X}(x)}T \wedge T^\prime \xrightarrow{WW_\mathcal{X}(x)}S
+				$$
+		\end{itemize}
+	\end{definition}\end{frame}
 
 \begin{frame}
-	\begin{definition}
-		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define \textbf{write-dependency} $WW_\mathcal{X}(x)$ over $\mathcal{T}_\mathcal{X}$ as:
-		$$
-			T \xrightarrow{WW_\mathcal{X}(x)} S \Leftrightarrow T \xrightarrow{CO}S \wedge T,S \in WriteTx_x
-		$$
-	\end{definition}
-	Informally, T $ \xrightarrow{WW_\mathcal{X}(x)} S $ means that $S$ overwrites $T$'s write to $x$.
-\end{frame}
-
-
-\begin{frame}
-	\begin{definition}
-		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define \textbf{anti-dependency} $RW_\mathcal{X}(x)$ over $\mathcal{T}_\mathcal{X}$ as:
-		\begin{multline*}
-			T \xrightarrow{RW_\mathcal{X}(x)} S \Leftrightarrow \\
-			T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR_\mathcal{X}(x)}T \wedge T^\prime \xrightarrow{WW_\mathcal{X}(x)}S
-		\end{multline*}
-	\end{definition}
-	Informally, T $ \xrightarrow{RW_\mathcal{X}(x)} S $ means that $S$ overwrites the write to $x$ read by $T$.
+	Informally,
+	\begin{itemize}
+		\item $T \xrightarrow{WR_\mathcal{X}(x)} S $ means that $S$ reads $T$'s write to $x$.
+		\item $T \xrightarrow{WW_\mathcal{X}(x)} S $ means that $S$ overwrites $T$'s write to $x$.
+		\item $T \xrightarrow{RW_\mathcal{X}(x)} S $ means that $S$ overwrites the write to $x$ read by $T$.
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -381,7 +378,7 @@
 		\pause
 		\item<2> WW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that for every $x \in Obj$, $WW(x)$ is a total order on the set $WriteTx_x$.
 		\pause
-		\item<3> RW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is derived from WR and WW as in the definition of $WR_\mathcal{X}(x)$.
+		\item<3> RW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is derived from WR and WW as in the definition of $RW_\mathcal{X}(x)$.
 		\end{itemize}
 	\end{definition}
 \end{frame}
