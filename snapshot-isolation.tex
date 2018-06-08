@@ -19,7 +19,7 @@
 {
 	\usetheme{Madrid}
 	
-	%\setbeamercovered{transparent}
+	\setbeamercovered{transparent}
 	% or whatever (possibly just delete it)
 }
 
@@ -35,9 +35,7 @@
 \graphicspath{ {./graphics/} }
 \usepackage{amsthm}
 
-\newtheorem*{remark}{Remark}
 \newtheorem*{prop}{Proposition}
-\newtheorem*{proofnosq}{Proof.}
 
 
 \title[Analyzing Snapshot Isolation] % (optional, use only with long paper titles)
@@ -173,7 +171,8 @@
 \begin{frame}
 	\begin{itemize}
 		\item We'll use $ (T, S) \in VIS$ and $ T \xrightarrow{VIS} S $ interchangeably for $VIS$ and other relations.
-		\item For $\mathcal{H}=(\mathcal{T}, SO)$ we'll shorten $(\mathcal{T}, SO, VIS, CO)$ to $(\mathcal{H}, VIS, CO)$
+		\item For $\mathcal{H}=(\mathcal{T}, SO)$ we will shorten $(\mathcal{T}, SO, VIS, CO)$ to $(\mathcal{H}, VIS, CO)$
+		\item For $\mathcal{H}=(\mathcal{T}, SO)$ and other tuples, we'll use $\mathcal{T}_\mathcal{H}$ to denote that $\mathcal{T}$ is part of the tuple $\mathcal{H}$
 	\end{itemize}
 \end{frame}
 
@@ -249,7 +248,7 @@
 		\includegraphics[scale=0.3]{fig2a}
 	\end{figure}
 	\begin{example}
-		$T_1$ ordered after $T_2$ by $SO$ (therefore by $VIS$ and $CO$), $x$ must contain 1 in $T_2$.
+		$T_1$ ordered after $T_2$ by $SO$ (therefore by $VIS$ and $CO$), $T_2$ must read 1 from $x$.
 	\end{example}
 \end{frame}
 
@@ -372,15 +371,17 @@
 	\begin{definition}
 		A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW)$, where $(\mathcal{T}, SO)$ is a history and:
 		\begin{itemize}
-			\item WR: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that:
+			\item<1> WR: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that:
 			\begin{itemize}
 				\item $\forall T,S. \forall x . T \xrightarrow{WR(x)}S \Rightarrow $ 
 					  $	\exists n. T \ne S \wedge T \vdash write(x,n) \wedge S \vdash read(x,n)$
 				\item $\forall S \in \mathcal{T}. \forall x. S \vdash read(x,\_) \Rightarrow \exists T. T \xrightarrow{WR(x)} S $
 				\item $\forall T, T^\prime, S \in \mathcal{T}. \forall x. \left( T \xrightarrow{WR(x)} S \wedge T^\prime \xrightarrow{WR(x)} S \right) \Rightarrow T = T^\prime $
 			\end{itemize}
-		\item WW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that for every $x \in Obj$, $WW(x)$ is a total order on the set $WriteTx_x$.
-		\item RW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is derived from WR and WW as in the definition of $WR_\mathcal{X}(x)$.
+		\pause
+		\item<2> WW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that for every $x \in Obj$, $WW(x)$ is a total order on the set $WriteTx_x$.
+		\pause
+		\item<3> RW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is derived from WR and WW as in the definition of $WR_\mathcal{X}(x)$.
 		\end{itemize}
 	\end{definition}
 \end{frame}
@@ -394,9 +395,9 @@
 		$$
 		is a dependency graph.
 	\end{prop}
-	\begin{proofnosq}
+	\begin{block}{Proof}
 		By showing $graph(\mathcal{X})$ satisfies all requirements of a dependency graph.
-	\end{proofnosq}
+	\end{block}
 \end{frame}
 
 \subsection{Characterization}
@@ -520,8 +521,8 @@ contain cycles without adjacent anti dependencies.
 		We let $PreExecSI$ be the set of pre-executions satisfying the SI axioms:
 		$$
 		\begin{aligned}
-			PreExecSI = \{ \mathcal{P} \mid \mathcal{P} \vDash & INT \wedge EXT \wedge SESSION \wedge \\
-			& PREFIX \wedge NOCONFLICT \}
+			PreExecSI = \{ \mathcal{P} \mid \mathcal{P} \vDash & \textsc{Int} \wedge \textsc{Ext} \wedge \textsc{Session} \wedge \\
+			& \textsc{Prefix} \wedge \textsc{NoConflict} \}
 		\end{aligned}
 		$$
 	\end{definition}
@@ -648,9 +649,14 @@ contain cycles without adjacent anti dependencies.
 		Given $\mathcal{G}$ let \textbf{dynamic chopping graph} $DCG(\mathcal{G})$ obtained from $\mathcal{G}$ by
 		\begin{itemize}
 			\item Removing $WR_\mathcal{G}, WW_\mathcal{G}, RW_\mathcal{G}$ edges between transactions related by $\approx_\mathcal{G}$
-			\item Adding \textbf{predecessor} edges $SO^{-1}_\mathcal{G}$
-			\item We'll call $SO$ \textbf{successor} edges
-			\item And  call $\left( WR_\mathcal{G} \cup WW_\mathcal{G} \cup RW_\mathcal{G} \right) \setminus \approx_\mathcal{G}$ \textbf{conflict} edges
+			\item Adding $SO^{-1}$ edges
+		\end{itemize}
+		\pause
+		We'll classify the edges as following:
+		\begin{itemize}
+			\item $SO$ - \textbf{successor} edges
+			\item $SO^{-1}$ - \textbf{predecessor} edges
+			\item $\left( WR_\mathcal{G} \cup WW_\mathcal{G} \cup RW_\mathcal{G} \right) \setminus \approx_\mathcal{G}$ - \textbf{conflict} edges
 		\end{itemize}
 	\end{definition}
 \end{frame}
@@ -674,7 +680,13 @@ contain cycles without adjacent anti dependencies.
 	\end{figure}
 	\begin{example}
 		$DCG(\mathcal{G})$ contains a critical cycle:
-		$$ T^\prime \xrightarrow{WR_\mathcal{G}} S^\prime \xrightarrow{SO_\mathcal{G}} S \xrightarrow{RW_\mathcal{G}} T \xrightarrow{SO^{-1}_\mathcal{G}} T^\prime$$
+		$$  
+			S^\prime \xrightarrow{SO_\mathcal{G}}
+			S \xrightarrow{\alert{RW_\mathcal{G}}} 
+			T \xrightarrow{\alert{SO^{-1}_\mathcal{G}}} 
+			T^\prime \xrightarrow{\alert{WR_\mathcal{G}}} 
+			S^\prime
+		$$
 	\end{example}
 \end{frame}
 
@@ -746,8 +758,26 @@ We use the last theorem to derive the static analysis.
 
 \begin{frame}
 	\begin{figure}
-		\includegraphics[scale=0.28]{fig56}
+		\includegraphics[scale=0.28]{fig5}
 	\end{figure}
+	\begin{example}
+		\textit{Fig. 5} contains a critical cycle:
+		\begin{align*}
+			&(var1=acct1) \xrightarrow{\alert{RW}} (acct1=acct1-100) \xrightarrow{S} \\
+			&\left(acct2 = acct2 + 100\right) \xrightarrow{\alert{WR}}
+			(var2=actt2) \xrightarrow{\alert{P}} (var1=acct1)
+		\end{align*}
+	$\Rightarrow$ not a valid chopping
+	\end{example}
+\end{frame}
+
+\begin{frame}
+	\begin{figure}
+		\includegraphics[scale=0.24]{fig6}
+	\end{figure}
+	\begin{example}
+		\textit{Fig. 6} contains a single cycle, where two vertices appear twice $\Rightarrow$ not a critical cycle. The above chopping is spliceable.
+	\end{example}
 \end{frame}
 
 \subsection{Robustness}
@@ -772,6 +802,30 @@ We use the last theorem to derive the static analysis.
 \end{frame}
 
 \begin{frame}
+	Consider $\mathcal{G}$:
+	\begin{figure}
+		\includegraphics[scale=0.2]{fig2d}
+	\end{figure}
+	\begin{example}
+		The above graph contains a cycle with two adjacent anti-dependencies. \\
+		$\Rightarrow \mathcal{G} \in GraphSI \setminus GraphSER$
+	\end{example}
+\end{frame}
+
+
+\begin{frame}
+	Consider $\mathcal{G}$:
+	\begin{figure}
+		\includegraphics[scale=0.25]{fig4}
+	\end{figure}
+	\begin{example}
+		The above graph contains no cycles. \\
+		$\Rightarrow \mathcal{G} \notin GraphSI \setminus GraphSER \wedge \mathcal{G}_2 \in GraphSER
+		$
+	\end{example}
+\end{frame}
+
+\begin{frame}
 	Static analysis:
 	\begin{itemize}
 		\item Assume code of transactions defined by set of programs $\mathcal{P}$ with given read and write sets.
@@ -779,7 +833,6 @@ We use the last theorem to derive the static analysis.
 		\item Check that static dependency graph contains no cycles with two adjacent anti-dependency edges.
 	\end{itemize}
 \end{frame}
-
 
 \begin{frame}
 	\textbf{Robustness against PSI towards SI} \\
@@ -807,7 +860,9 @@ We use the last theorem to derive the static analysis.
 		\end{aligned}
 		$$
 	\end{definition}
-	\textsc{TransVis} axiom ensures that transactions ordered by $VIS$ are observed by others in this order. However, allows transactions unrelated by $VIS$ to be observed in different orders; in particular, allows \textit{long fork} anomaly.
+	\begin{definition}
+		\textsc{TransVis} axiom ensures that transactions ordered by $VIS$ are observed by others in this order. However, allows transactions unrelated by $VIS$ to be observed in different orders; in particular, allows \textit{long fork} anomaly.
+	\end{definition}
 \end{frame}
 
 \begin{frame}
@@ -839,7 +894,22 @@ We use the last theorem to derive the static analysis.
 \end{frame}
 
 \begin{frame}
-	FIXME example
+	Consider $\mathcal{G}$:
+	\begin{figure}
+		\includegraphics[scale=0.25]{fig2c}
+	\end{figure}
+	\begin{example}
+		Contains a cycle, with two \textit{non-adjacent} anti-dependencies.
+		$\Rightarrow \mathcal{G} \in GraphPSI \setminus GraphSI$
+	\end{example}
+\end{frame}
+
+\begin{frame}
+	Static analysis: \\
+	In similar fashion to the previous robustness analysis, desired criteria:
+	\begin{itemize}
+		\item \textit{Static dependency graph} contains no cycles where there are at least two anti-dependency edges and no two anti-dependency edges are adjacent.
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
