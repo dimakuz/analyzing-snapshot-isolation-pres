@@ -487,7 +487,7 @@ contain cycles without adjacent anti dependencies.
 			\item \textbf{Completeness:} $ \forall \mathcal{X} \in ExecSI. graph(\mathcal{X}) \in GraphSI$
 		\end{enumerate}
 	\end{theorem}
-	The \textit{completeness} closely follows from existing results\footnote{Making Snapshot Isolation Serializable, 2005, A. Fekete et al}. We will focus on the \textit{soundness}.
+	\textit{Completeness} closely follows from existing results\footnote{Making Snapshot Isolation Serializable, 2005, A. Fekete et al}. We will focus on \textit{soundness}.
 	
 \end{frame}
 
@@ -559,7 +559,7 @@ contain cycles without adjacent anti dependencies.
 \end{frame}
 
 \begin{frame}
-	FIXME add intuition
+	FIXME add intuition / constructive example
 \end{frame}
 
 \begin{frame}
@@ -705,6 +705,13 @@ We use the last theorem to derive the static analysis.
 \end{frame}
 
 \begin{frame}
+	\begin{itemize}
+		\item History $\mathcal{H}$ \textbf{can be produced} by programs $\mathcal{P}$ if there's 1:1 correspondence between every session in $\mathcal{H}$ and program $P_i\in\mathcal{P}$, and each transaction in the session corresponds to respective program piece, along with its read/write sets.
+		\item Chopping is defined \textbf{correct} if every dependency graph $\mathcal{G}\in GraphSI$, where $\mathcal{H}_\mathcal{G}$ can be produced by $\mathcal{P}$ is spliceable.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
 	\begin{figure}
 		\includegraphics[scale=0.28]{fig4}
 	\end{figure}
@@ -718,12 +725,6 @@ We use the last theorem to derive the static analysis.
 	\end{example}
 \end{frame}
 
-\begin{frame}
-	\begin{itemize}
-		\item History $\mathcal{H}$ \textbf{can be produced} by programs $\mathcal{P}$ if there's 1:1 correspondence between every session in $\mathcal{H}$ and program $P_i\in\mathcal{P}$, and each transaction in the session corresponds to respective program piece, along with its read/write sets.
-		\item Chopping is defined \textbf{correct} if every dependency graph $\mathcal{G}\in GraphSI$, where $\mathcal{H}_\mathcal{G}$ can be produced by $\mathcal{P}$ is splice-able.
-	\end{itemize}
-\end{frame}
 
 \begin{frame}
 	Consider program set $\mathcal{P}$
@@ -857,6 +858,7 @@ We use the last theorem to derive the static analysis.
 		\end{aligned}
 		$$
 	\end{definition}
+	\pause
 	\begin{definition}
 		\textsc{TransVis} axiom ensures that transactions ordered by $VIS$ are observed by others in this order. However, allows transactions unrelated by $VIS$ to be observed in different orders; in particular, allows \textit{long fork} anomaly.
 	\end{definition}
