@@ -34,6 +34,7 @@
 \usepackage[T1]{fontenc}
 \graphicspath{ {./graphics/} }
 \usepackage{amsthm}
+\usepackage{multicol}
 
 \newtheorem*{prop}{Proposition}
 
@@ -121,7 +122,7 @@
 \end{frame}
 
 \begin{frame}
-	We'll focus on \textit{\textbf{strong session} Snapshot Isolation}: \\
+	We'll focus on \textit{\textbf{strong session} Snapshot Isolation}: \\ \hfill \\
 	Transactions are grouped into sessions, a transaction's snapshot is expected to include \textit{all preceding transactions} of the same session.
 \end{frame}
 
@@ -213,7 +214,7 @@
 	\end{definition}
 	Where ...
 	\begin{itemize}
-		\item $max_R(A) = \{ a \mid \forall b \in A: a = b \vee (b, a) \in R \} $
+		\item $max_R(A) = \{ b \mid \forall b \in A: a = b \vee (a, b) \in R \} $
 		\item $min_R(A) = \{ a \mid \forall b \in A: a = b \vee (a, b) \in R \} $
 	\end{itemize}
 \end{frame}
@@ -229,10 +230,10 @@
 	\end{definition}
 	Where ...
 	\begin{itemize}
+		\item $ T \vdash read(x,n)$ if $T$ reads from $x$ and $n$ is the value of $x$ at the first read.
+		\item $ T \vdash write(x,n) $ if $T$ writes to $x$ and $n$ is the final value of $x$.
 		\item $R^{-1}(a) = \{ b \mid (b, a) \in R \}$
 		\item $ WriteTx_x = \{ T \mid T \vdash write(x,\_)\}$
-		\item $ T \vdash write(x,n) $ if $T$ writes to $x$ and $n$ is the final value of $x$.
-		\item $ T \vdash read(x,n)$ if $T$ reads from $x$ and $n$ is the value of $x$ at the first read.
 	\end{itemize}
 \end{frame}
 
@@ -321,35 +322,33 @@
 	\end{itemize}
 \end{frame}
 
-\begin{frame}
-	\begin{definition}
-		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define:
-		\begin{itemize}
-			\item<1> \textbf{read-dependency} $WR_\mathcal{X}(x)$ as:
-				\begin{multline*}
-					T \xrightarrow{WR_\mathcal{X}(x)} S \Leftrightarrow \\
-					S \vdash read(x,n) \wedge T = max_{CO}\left( VIS^{-1}(S) \cap WriteTx_x \right)
-				\end{multline*}
-			\item<2> \textbf{write-dependency} $WW_\mathcal{X}(x)$ as:
-				$$
-				T \xrightarrow{WW_\mathcal{X}(x)} S \Leftrightarrow T \xrightarrow{CO}S \wedge T,S \in WriteTx_x
-				$$
-			\item<3> \textbf{anti-dependency} $RW_\mathcal{X}(x)$ as:
-				$$
-				T \xrightarrow{RW_\mathcal{X}(x)} S \Leftrightarrow
-				T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR_\mathcal{X}(x)}T \wedge T^\prime \xrightarrow{WW_\mathcal{X}(x)}S
-				$$
-		\end{itemize}
-	\end{definition}\end{frame}
 
+\begin{frame}
+\begin{definition}
+	A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW)$, where $(\mathcal{T}, SO)$ is a history and:
+	\begin{itemize}
+		\item WR: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that:
+		\begin{itemize}
+			\item $\forall T,S. \forall x . T \xrightarrow{WR(x)}S \Rightarrow $ 
+			$	\exists n. T \ne S \wedge T \vdash write(x,n) \wedge S \vdash read(x,n)$
+			\item $\forall S \in \mathcal{T}. \forall x. S \vdash read(x,\_) \Rightarrow \exists T. T \xrightarrow{WR(x)} S $
+			\item $\forall T, T^\prime, S \in \mathcal{T}. \forall x. \left( T \xrightarrow{WR(x)} S \wedge T^\prime \xrightarrow{WR(x)} S \right) \Rightarrow T = T^\prime $
+		\end{itemize}
+		\item WW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that for every $x \in Obj$, $WW(x)$ is a total order on the set $WriteTx_x$.
+		\item RW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is derived from WR and WW such that $T \xrightarrow{RW(x)} S \Leftrightarrow
+		T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR(x)}T \wedge T^\prime \xrightarrow{WW(x)}S$
+	\end{itemize}
+\end{definition}
+\end{frame}
 \begin{frame}
 	Informally,
 	\begin{itemize}
-		\item $T \xrightarrow{WR_\mathcal{X}(x)} S $ means that $S$ reads $T$'s write to $x$.
-		\item $T \xrightarrow{WW_\mathcal{X}(x)} S $ means that $S$ overwrites $T$'s write to $x$.
-		\item $T \xrightarrow{RW_\mathcal{X}(x)} S $ means that $S$ overwrites the write to $x$ read by $T$.
+		\item $T \xrightarrow{WR(x)} S $ means that $S$ reads $T$'s write to $x$.
+		\item $T \xrightarrow{WW(x)} S $ means that $S$ overwrites $T$'s write to $x$.
+		\item $T \xrightarrow{RW(x)} S $ means that $S$ overwrites the write to $x$ read by $T$.
 	\end{itemize}
 \end{frame}
+
 
 \begin{frame}
 	\begin{figure}
@@ -364,24 +363,27 @@
 	\end{example}
 \end{frame}
 
+
 \begin{frame}
 	\begin{definition}
-		A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW)$, where $(\mathcal{T}, SO)$ is a history and:
+		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define:
 		\begin{itemize}
-			\item<1> WR: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that:
-			\begin{itemize}
-				\item $\forall T,S. \forall x . T \xrightarrow{WR(x)}S \Rightarrow $ 
-					  $	\exists n. T \ne S \wedge T \vdash write(x,n) \wedge S \vdash read(x,n)$
-				\item $\forall S \in \mathcal{T}. \forall x. S \vdash read(x,\_) \Rightarrow \exists T. T \xrightarrow{WR(x)} S $
-				\item $\forall T, T^\prime, S \in \mathcal{T}. \forall x. \left( T \xrightarrow{WR(x)} S \wedge T^\prime \xrightarrow{WR(x)} S \right) \Rightarrow T = T^\prime $
-			\end{itemize}
-		\pause
-		\item<2> WW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that for every $x \in Obj$, $WW(x)$ is a total order on the set $WriteTx_x$.
-		\pause
-		\item<3> RW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is derived from WR and WW as in the definition of $RW_\mathcal{X}(x)$.
+			\item \textbf{read-dependency} $WR_\mathcal{X}(x)$ as:
+				\begin{multline*}
+					T \xrightarrow{WR_\mathcal{X}(x)} S \Leftrightarrow \\
+					S \vdash read(x,n) \wedge T = max_{CO}\left( VIS^{-1}(S) \cap WriteTx_x \right)
+				\end{multline*}
+			\item \textbf{write-dependency} $WW_\mathcal{X}(x)$ as:
+				$$
+				T \xrightarrow{WW_\mathcal{X}(x)} S \Leftrightarrow T \xrightarrow{CO}S \wedge T,S \in WriteTx_x
+				$$
+			\item \textbf{anti-dependency} $RW_\mathcal{X}(x)$ as:
+				$$
+				T \xrightarrow{RW_\mathcal{X}(x)} S \Leftrightarrow
+				T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR_\mathcal{X}(x)}T \wedge T^\prime \xrightarrow{WW_\mathcal{X}(x)}S
+				$$
 		\end{itemize}
-	\end{definition}
-\end{frame}
+	\end{definition}\end{frame}
 
 
 \begin{frame}
@@ -459,6 +461,28 @@
 	\end{itemize}
 \end{frame}
 
+\begin{frame}
+	The relation $(SO_\mathcal{G} \cup WR_\mathcal{G} \cup WW_\mathcal{G}); RW_\mathcal{G}^?$ includes edges of the following form:
+	\begin{multicols}{3}
+		\begin{itemize}
+			\item $SO$
+			\item $SO;RW$
+			\item $WR$
+			\item $WR;RW$
+			\item $WW$
+			\item $WW;RW$
+		\end{itemize}
+	\end{multicols}
+	If there is a cycle in $\mathcal{G}$, it:
+	\begin{itemize}
+		\item cannot be composed only of $SO\cup WR \cup WW$ edges, otherwise it is a cycle in $CO$
+		\item cannot contain only non-adjacent anti-dependency, otherwise above relation is cyclic.
+	\end{itemize}
+	$\Rightarrow$ any cycle has to have at least two adjacent anti dependencies. \\
+	\hfill \\
+	The latter type of cycles are disallowed under SI, they allow \textit{long fork} and \textit{lost update} anomalies.
+\end{frame}
+
 
 \begin{frame}
 	\begin{figure}
@@ -471,12 +495,12 @@
 \end{frame}
 
 \begin{frame}
-In contrast, following is \emph{not} allowed under SI:
-\begin{figure}
-\includegraphics[scale=0.2]{fig2b}
-\includegraphics[scale=0.2]{fig2c}
-\end{figure}
-contain cycles without adjacent anti dependencies.
+	In contrast, following is \emph{not} allowed under SI:
+	\begin{figure}
+		\includegraphics[scale=0.2]{fig2b}
+		\includegraphics[scale=0.2]{fig2c}
+	\end{figure}
+	contain cycles without adjacent anti dependencies.
 \end{frame}
 
 \begin{frame}
@@ -559,10 +583,6 @@ contain cycles without adjacent anti dependencies.
 \end{frame}
 
 \begin{frame}
-	FIXME add intuition / constructive example
-\end{frame}
-
-\begin{frame}
 	\begin{proof}[Proof outline]
 		Let $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW) \in GraphSI$
 		\begin{itemize}
@@ -590,6 +610,27 @@ contain cycles without adjacent anti dependencies.
 	\end{itemize}
 \end{frame}
 
+\begin{frame}
+	\begin{figure}
+		\includegraphics[scale=0.15]{chopping1}
+	\end{figure}
+	\begin{example}
+		Given the above graph, can we chop the top transaction into 2 parts? \\
+		\hfill \\
+		No... bottom transaction will be able to observe intermittent state.
+	\end{example}
+\end{frame}
+
+\begin{frame}
+	\begin{figure}
+		\includegraphics[scale=0.15]{chopping2}
+	\end{figure}
+	\begin{example}
+		What if we decouple the reads into separate sessions? \\
+		\hfill \\
+		Each read is allowed to observe the transfer in any order, no new observable behaviors.
+	\end{example}
+\end{frame}
 
 \begin{frame}
 	\begin{definition}
@@ -648,7 +689,6 @@ contain cycles without adjacent anti dependencies.
 			\item Removing $WR_\mathcal{G}, WW_\mathcal{G}, RW_\mathcal{G}$ edges between transactions related by $\approx_\mathcal{G}$
 			\item Adding $SO^{-1}$ edges
 		\end{itemize}
-		\pause
 		We'll classify the edges as following:
 		\begin{itemize}
 			\item $SO$ - \textbf{successor} edges
@@ -667,6 +707,7 @@ contain cycles without adjacent anti dependencies.
 			\item Any 2 anti dependency edges $(RW_\mathcal{G}\setminus \approx_\mathcal{G})$ are separated by at least one read $(WR_\mathcal{G}\setminus \approx_\mathcal{G})$ or write $(WW_\mathcal{G}\setminus \approx_\mathcal{G})$ dependency edge
 		\end{itemize}
 	\end{definition}
+	Intuitively, we want criteria for $DCG(\mathcal{G}))$ that translates into an invalid cycle on the spliced graph.
 \end{frame}
 
 
@@ -692,6 +733,12 @@ contain cycles without adjacent anti dependencies.
 	\begin{theorem}
 		For $\mathcal{G} \in GraphSI$, if $DCG(\mathcal{G})$ contains no critical cycles, then $\mathcal{G}$ is spliceable.
 	\end{theorem}
+	Specifically:
+	\begin{itemize}
+		\item If $\mathcal{G}$ is spliceable, then the spliced graph $\mathcal{G}^\prime \in GraphSI$
+		\item $\Rightarrow \mathcal{G}^\prime \in GraphSI$ so it contains no cycles without adjacent anti-dependencies
+		\item $\Rightarrow$ we're allowed to chop $\mathcal{G}^\prime$ into $\mathcal{G}$
+	\end{itemize}
 \end{frame}
 
 
@@ -812,18 +859,6 @@ We use the last theorem to derive the static analysis.
 
 
 \begin{frame}
-	Consider $\mathcal{G}$:
-	\begin{figure}
-		\includegraphics[scale=0.25]{fig4}
-	\end{figure}
-	\begin{example}
-		The above graph contains no cycles. \\
-		$\Rightarrow \mathcal{G} \notin GraphSI \setminus GraphSER \wedge \mathcal{G}_2 \in GraphSER
-		$
-	\end{example}
-\end{frame}
-
-\begin{frame}
 	Static analysis:
 	\begin{itemize}
 		\item Assume code of transactions defined by set of programs $\mathcal{P}$ with given read and write sets.
@@ -858,9 +893,15 @@ We use the last theorem to derive the static analysis.
 		\end{aligned}
 		$$
 	\end{definition}
-	\pause
+
+\end{frame}
+
+\begin{frame}
+	\begin{figure}
+		\includegraphics[scale=0.25]{fig2c}
+	\end{figure}
 	\begin{definition}
-		\textsc{TransVis} axiom ensures that transactions ordered by $VIS$ are observed by others in this order. However, allows transactions unrelated by $VIS$ to be observed in different orders; in particular, allows \textit{long fork} anomaly.
+		\textsc{TransVis} axiom ensures that transactions ordered by $VIS$ are observed by others in this order. However, allows transactions unrelated by $VIS$ to be observed in different orders; in particular, allows \textit{long fork} anomaly. \\
 	\end{definition}
 \end{frame}
 
@@ -890,26 +931,23 @@ We use the last theorem to derive the static analysis.
 	\begin{theorem}
 		For any $\mathcal{G}$, we have $\mathcal{G} \in GraphPSI \setminus GraphSI $ iff. $\mathcal{T}_\mathcal{G} \vDash \textsc{Int}$, $\mathcal{G}$ contains at least one cycle with no adjacent anti-dependency edges, and all its cycles have at least two anti dependency edges.
 	\end{theorem}
-\end{frame}
-
-\begin{frame}
-	Consider $\mathcal{G}$:
-	\begin{figure}
-		\includegraphics[scale=0.25]{fig2c}
-	\end{figure}
-	\begin{example}
-		Contains a cycle, with two \textit{non-adjacent} anti-dependencies.
-		$\Rightarrow \mathcal{G} \in GraphPSI \setminus GraphSI$
-	\end{example}
-\end{frame}
-
-\begin{frame}
-	Static analysis: \\
-	In similar fashion to the previous robustness analysis, desired criteria:
+	
+	Static analysis:
 	\begin{itemize}
 		\item \textit{Static dependency graph} contains no cycles where there are at least two anti-dependency edges and no two anti-dependency edges are adjacent.
 	\end{itemize}
 \end{frame}
+
+%\begin{frame}
+%	Consider $\mathcal{G}$:
+%	\begin{figure}
+%		\includegraphics[scale=0.25]{fig2c}
+%	\end{figure}
+%	\begin{example}
+%		Contains a cycle, with two \textit{non-adjacent} anti-dependencies.
+%		$\Rightarrow \mathcal{G} \in GraphPSI \setminus GraphSI$
+%	\end{example}
+%\end{frame}
 
 \begin{frame}
 	\begin{center}
