@@ -35,6 +35,7 @@
 \graphicspath{ {./graphics/} }
 \usepackage{amsthm}
 \usepackage{multicol}
+\usepackage{calc}
 
 \newtheorem*{prop}{Proposition}
 
@@ -156,17 +157,14 @@
 \end{frame}
 
 \begin{frame}
+	\begin{definition}
+		An \textbf{abstract execution} is a tuple $ \mathcal{X} = (\mathcal{T}, SO, VIS, CO) $, where $(\mathcal{T}, SO)$ is a history and the \textbf{visibility} and \textbf{commit order} $ VIS, CO \subseteq \mathcal{T} \times \mathcal{T} $ are such that $ VIS \subseteq CO $ and $CO$ is total.
+	\end{definition}
 	Assumptions:
 	\begin{itemize}
 		\item All transactions commit (aborted ones do not affect the history)
 		\item All histories are finite (no infinite computations)
 	\end{itemize}
-\end{frame}
-
-\begin{frame}
-	\begin{definition}
-		An \textbf{abstract execution} is a tuple $ \mathcal{X} = (\mathcal{T}, SO, VIS, CO) $, where $(\mathcal{T}, SO)$ is a history and the \textbf{visibility} and \textbf{commit order} $ VIS, CO \subseteq \mathcal{T} \times \mathcal{T} $ are such that $ VIS \subseteq CO $ and $CO$ is total.
-	\end{definition}
 \end{frame}
 
 \begin{frame}
@@ -485,6 +483,15 @@
 
 
 \begin{frame}
+	Prohibited under SI:
+	\begin{figure}
+		\includegraphics[scale=0.2]{fig2b}
+		\includegraphics[scale=0.2]{fig2c}
+	\end{figure}
+	contain cycles without adjacent anti dependencies.
+\end{frame}
+
+\begin{frame}
 	\begin{figure}
 		\includegraphics[scale=0.25]{fig2d}
 	\end{figure}
@@ -495,29 +502,19 @@
 \end{frame}
 
 \begin{frame}
-	In contrast, following is \emph{not} allowed under SI:
-	\begin{figure}
-		\includegraphics[scale=0.2]{fig2b}
-		\includegraphics[scale=0.2]{fig2c}
-	\end{figure}
-	contain cycles without adjacent anti dependencies.
-\end{frame}
-
-\begin{frame}
 	To prove the previous theorem we'll show a stronger result:
 	\begin{theorem}
 		\begin{enumerate}
-			\item \textbf{Soundness:} $ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $ 
-			\item \textbf{Completeness:} $ \forall \mathcal{X} \in ExecSI. graph(\mathcal{X}) \in GraphSI$
+			\item \textbf{Soundness:} $$ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $$
+			\item \textbf{Completeness:} $$ \forall \mathcal{X} \in ExecSI. graph(\mathcal{X}) \in GraphSI$$
 		\end{enumerate}
 	\end{theorem}
 	\textit{Completeness} closely follows from existing results\footnote{Making Snapshot Isolation Serializable, 2005, A. Fekete et al}. We will focus on \textit{soundness}.
-	
 \end{frame}
 
 \begin{frame}
 	\begin{block}{Objective}
-		\textbf{Soundness:} $ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $ 	
+		\textbf{Soundness:} $$ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $$ 	
 	\end{block}
 	\begin{block}{Proof sketch}
 		\begin{itemize}
@@ -552,14 +549,14 @@
 \begin{frame}
 	\begin{itemize}
 		\item Consider $\mathcal{G} = (\mathcal{H}, WR, WW, RW)$, let $\mathcal{P} = (\mathcal{H}, VIS, CO)$ a respective pre-execution.
-		\item $VIS,CO$ must hold the following to conform with $\mathcal{G}$ \\
-			\begin{align*}
-				SO \cup WR \cup WW & \subseteq VIS \\
-				CO; VIS & \subseteq VIS \\
-				VIS & \subseteq CO \\
-				CO; CO & \subseteq CO \\
-				VIS; RW & \subseteq CO
-			\end{align*}
+		\item $VIS,CO$ must hold the following to conform with $\mathcal{G}$ and satisfy $PreExecSI$: \\
+		\begin{description}[leftmargin=!,labelwidth=\widthof{}]
+			\item[$SO \cup WR \cup WW \subseteq VIS$] $VIS$ must conform with read/write dependecies of $\mathcal{G}$ and with $SO$ to hold \textsc{Session} axiom.
+			\item[$CO;VIS \subseteq VIS$] to ensure \textsc{Prefix} axiom.
+			\item[$VIS \subseteq CO$] to conform with SI definition - only committed transactions in snapshots.
+			\item[$CO;CO$] transitivity of $CO$
+			\item[$VIS;RW \subseteq CO$] to ensure \textsc{Ext} axiom
+		\end{description}
 	\end{itemize}
 \end{frame}
 
@@ -737,7 +734,7 @@
 	\begin{itemize}
 		\item If $\mathcal{G}$ is spliceable, then the spliced graph $\mathcal{G}^\prime \in GraphSI$
 		\item $\Rightarrow \mathcal{G}^\prime \in GraphSI$ so it contains no cycles without adjacent anti-dependencies
-		\item $\Rightarrow$ we're allowed to chop $\mathcal{G}^\prime$ into $\mathcal{G}$
+		\item $\Rightarrow$ we might be able to chop $\mathcal{G}^\prime$ into $\mathcal{G}$
 	\end{itemize}
 \end{frame}
 
