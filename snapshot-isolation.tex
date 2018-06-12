@@ -100,6 +100,7 @@
 	\begin{itemize}
 		\item We focus on \emph{Snapshot Isolation} presented in the last talk
 		\item ... same context of DBMS and transactional memory systems
+		\item We \textit{won't} focus on the replicated aspect of the data-bases, but rather on semantics of concurrent user sessions.
 	\end{itemize}
 \end{frame}
 
@@ -168,6 +169,7 @@
 \end{frame}
 
 \begin{frame}
+	Some notation:
 	\begin{itemize}
 		\item We'll use $ (T, S) \in VIS$ and $ T \xrightarrow{VIS} S $ interchangeably for $VIS$ and other relations.
 		\item For $\mathcal{H}=(\mathcal{T}, SO)$ we will shorten $(\mathcal{T}, SO, VIS, CO)$ to $(\mathcal{H}, VIS, CO)$
@@ -185,7 +187,8 @@
 \end{frame}
 
 \begin{frame}
-	We'll now try to define \emph{snapshot isolation} and \emph{serializability} in terms of \textbf{consistency axioms}:
+	We'll now define \emph{snapshot isolation} and \emph{serializability} in terms of \textbf{consistency axioms}:
+	\begin{definition}
 	\begin{equation*}
 		\begin{aligned}
 			ExecSI = {} &
@@ -199,6 +202,11 @@
 			HistSER = {} & \{ \mathcal{H} \mid \exists VIS,CO : (\mathcal{H}, VIS, CO) \in ExecSER \} 
 		\end{aligned}
 	\end{equation*}
+	\end{definition}
+	Where ...
+	\begin{itemize}
+		\item $\mathcal{X} \vDash \textsc{Prop}$ means that execution does not violate property \textsc{Prop}
+	\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -323,20 +331,21 @@
 
 \begin{frame}
 \begin{definition}
-	A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW)$, where $(\mathcal{T}, SO)$ is a history and:
+	A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW)$, where $(\mathcal{T}, SO)$ is a history and for each $x \in Obj$ we define the following relations:
 	\begin{itemize}
-		\item WR: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that:
+		\item \textbf{read dependency} $WR(x)$ as:
 		\begin{itemize}
-			\item $\forall T,S. \forall x . T \xrightarrow{WR(x)}S \Rightarrow $ 
+			\item $\forall T,S. T \xrightarrow{WR(x)}S \Rightarrow $ 
 			$	\exists n. T \ne S \wedge T \vdash write(x,n) \wedge S \vdash read(x,n)$
-			\item $\forall S \in \mathcal{T}. \forall x. S \vdash read(x,\_) \Rightarrow \exists T. T \xrightarrow{WR(x)} S $
-			\item $\forall T, T^\prime, S \in \mathcal{T}. \forall x. \left( T \xrightarrow{WR(x)} S \wedge T^\prime \xrightarrow{WR(x)} S \right) \Rightarrow T = T^\prime $
+			\item $\forall S \in \mathcal{T}. S \vdash read(x,\_) \Rightarrow \exists T. T \xrightarrow{WR(x)} S $
+			\item $\forall T, T^\prime, S \in \mathcal{T}. \left( T \xrightarrow{WR(x)} S \wedge T^\prime \xrightarrow{WR(x)} S \right) \Rightarrow T = T^\prime $
 		\end{itemize}
-		\item WW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is such that for every $x \in Obj$, $WW(x)$ is a total order on the set $WriteTx_x$.
-		\item RW: $Obj \rightarrow 2^{\mathcal{T} \times \mathcal{T}}$ is derived from WR and WW such that $T \xrightarrow{RW(x)} S \Leftrightarrow
+		\item \textbf{write dependency} $WW(x)$ is a total order over $WriteTx_x$.
+		\item \textbf{anti dependency} $RW(x)$ is derived from $WR(x)$ and $WW(x)$ such that $T \xrightarrow{RW(x)} S \Leftrightarrow
 		T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR(x)}T \wedge T^\prime \xrightarrow{WW(x)}S$
 	\end{itemize}
 \end{definition}
+	We'll use $WW$ to denote $\bigcup_{x\in Obj}WW(x)$ for $WW$ and the other two relations.
 \end{frame}
 \begin{frame}
 	Informally,
@@ -460,7 +469,7 @@
 \end{frame}
 
 \begin{frame}
-	The relation $(SO_\mathcal{G} \cup WR_\mathcal{G} \cup WW_\mathcal{G}); RW_\mathcal{G}^?$ includes edges of the following form:
+	The relation $$(SO_\mathcal{G} \cup WR_\mathcal{G} \cup WW_\mathcal{G}); RW_\mathcal{G}^?$$ includes edges of the following form:
 	\begin{multicols}{3}
 		\begin{itemize}
 			\item $SO$
@@ -612,7 +621,7 @@
 		\includegraphics[scale=0.15]{chopping1}
 	\end{figure}
 	\begin{example}
-		Given the above graph, can we chop the top transaction into 2 parts? \\
+		Given the top graph, can we chop the top transaction into 2 parts? \\
 		\hfill \\
 		No... bottom transaction will be able to observe intermittent state.
 	\end{example}
@@ -659,9 +668,10 @@
 		history resulting from splicing all sessions in a history.
 	\end{definition}
 	\begin{itemize}
-		\item We'll call $\mathcal{G} \in GraphSI $ \textbf{spliceable} if exists a dependency graph $ \mathcal{G}^\prime \in GraphSI $ such that $ \mathcal{H}_{\mathcal{G}^\prime} = splice(\mathcal{H}_\mathcal{G})$.
 		\item For graph $\mathcal{G}$ we let $\approx_\mathcal{G} = \approx_{\mathcal{H}_\mathcal{G}}$.
+		\item We'll call $\mathcal{G} \in GraphSI $ \textbf{spliceable} if exists a dependency graph $ \mathcal{G}^\prime \in GraphSI $ such that $ \mathcal{H}_{\mathcal{G}^\prime} = splice(\mathcal{H}_\mathcal{G})$.
 	\end{itemize}
+	Intuitively, if $\mathcal{G}$ is spliceable, then $splice(\mathcal{H}_\mathcal{G})$ can be chopped into $\mathcal{H}_\mathcal{G}$.
 \end{frame}
 
 \begin{frame}
@@ -931,20 +941,10 @@ We use the last theorem to derive the static analysis.
 	
 	Static analysis:
 	\begin{itemize}
-		\item \textit{Static dependency graph} contains no cycles where there are at least two anti-dependency edges and no two anti-dependency edges are adjacent.
+		\item Similar to SI/SER case, but checks the static dependency graph for the above criteria.
 	\end{itemize}
 \end{frame}
 
-%\begin{frame}
-%	Consider $\mathcal{G}$:
-%	\begin{figure}
-%		\includegraphics[scale=0.25]{fig2c}
-%	\end{figure}
-%	\begin{example}
-%		Contains a cycle, with two \textit{non-adjacent} anti-dependencies.
-%		$\Rightarrow \mathcal{G} \in GraphPSI \setminus GraphSI$
-%	\end{example}
-%\end{frame}
 
 \begin{frame}
 	\begin{center}
