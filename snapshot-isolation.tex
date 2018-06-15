@@ -331,28 +331,38 @@
 
 \begin{frame}
 \begin{definition}
-	A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW)$, where $(\mathcal{T}, SO)$ is a history and for each $x \in Obj$ we define the following relations:
+	A \textbf{dependency graph} is a tuple $\mathcal{G} = (\mathcal{T}, SO, WR, WW, RW)$, where $(\mathcal{T}, SO)$ is a history and for each $x \in Obj$ we define relations $WR(x), WW(x), RW(x)$ that satisfy the following:
 	\begin{itemize}
-		\item \textbf{read dependency} $WR(x)$ as:
+		\item $WR(x)$:
 		\begin{itemize}
 			\item $\forall T,S. T \xrightarrow{WR(x)}S \Rightarrow $ 
 			$	\exists n. T \ne S \wedge T \vdash write(x,n) \wedge S \vdash read(x,n)$
 			\item $\forall S \in \mathcal{T}. S \vdash read(x,\_) \Rightarrow \exists T. T \xrightarrow{WR(x)} S $
 			\item $\forall T, T^\prime, S \in \mathcal{T}. \left( T \xrightarrow{WR(x)} S \wedge T^\prime \xrightarrow{WR(x)} S \right) \Rightarrow T = T^\prime $
 		\end{itemize}
-		\item \textbf{write dependency} $WW(x)$ is a total order over $WriteTx_x$.
-		\item \textbf{anti dependency} $RW(x)$ is derived from $WR(x)$ and $WW(x)$ such that $T \xrightarrow{RW(x)} S \Leftrightarrow
+		\item $WW(x)$ is a total order over $WriteTx_x$.
+		\item $RW(x)$ is derived from $WR(x)$ and $WW(x)$ such that $T \xrightarrow{RW(x)} S \Leftrightarrow
 		T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR(x)}T \wedge T^\prime \xrightarrow{WW(x)}S$
 	\end{itemize}
 \end{definition}
 	We'll use $WW$ to denote $\bigcup_{x\in Obj}WW(x)$ for $WW$ and the other two relations.
 \end{frame}
+
 \begin{frame}
 	Informally,
 	\begin{itemize}
 		\item $T \xrightarrow{WR(x)} S $ means that $S$ reads $T$'s write to $x$.
+		\begin{itemize}
+			\item We'll call an edge in $WR$ a \textbf{read dependency}
+		\end{itemize}
 		\item $T \xrightarrow{WW(x)} S $ means that $S$ overwrites $T$'s write to $x$.
+				\begin{itemize}
+			\item We'll call an edge in $WW$ a \textbf{write dependency}
+		\end{itemize}
 		\item $T \xrightarrow{RW(x)} S $ means that $S$ overwrites the write to $x$ read by $T$.
+		\begin{itemize}
+			\item We'll call an edge in $RW$ an \textbf{anti dependency}
+		\end{itemize}
 	\end{itemize}
 \end{frame}
 
@@ -373,22 +383,25 @@
 
 \begin{frame}
 	\begin{definition}
-		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define:
+		Consider execution $\mathcal{X} = (\mathcal{T}, SO, VIS, CO)$, for $x \in Obj$ we define relations $WR_\mathcal{X}, WW_\mathcal{X}, RW_\mathcal{X}$ that satisfy the following:
 		\begin{itemize}
-			\item \textbf{read-dependency} $WR_\mathcal{X}(x)$ as:
-				\begin{multline*}
-					T \xrightarrow{WR_\mathcal{X}(x)} S \Leftrightarrow \\
+			\item 
+					$
+					T \xrightarrow{WR_\mathcal{X}(x)} S \Leftrightarrow 
+					$
+					
+					$\hfill
 					S \vdash read(x,n) \wedge T = max_{CO}\left( VIS^{-1}(S) \cap WriteTx_x \right)
-				\end{multline*}
-			\item \textbf{write-dependency} $WW_\mathcal{X}(x)$ as:
-				$$
+					$
+			\item
+				$
 				T \xrightarrow{WW_\mathcal{X}(x)} S \Leftrightarrow T \xrightarrow{CO}S \wedge T,S \in WriteTx_x
-				$$
-			\item \textbf{anti-dependency} $RW_\mathcal{X}(x)$ as:
-				$$
+				$
+			\item 
+				$
 				T \xrightarrow{RW_\mathcal{X}(x)} S \Leftrightarrow
 				T \ne S \wedge \exists T^\prime . T^\prime \xrightarrow{WR_\mathcal{X}(x)}T \wedge T^\prime \xrightarrow{WW_\mathcal{X}(x)}S
-				$$
+				$
 		\end{itemize}
 	\end{definition}\end{frame}
 
@@ -518,13 +531,31 @@
 			\item \textbf{Completeness:} $$ \forall \mathcal{X} \in ExecSI. graph(\mathcal{X}) \in GraphSI$$
 		\end{enumerate}
 	\end{theorem}
-	\textit{Completeness} closely follows from existing results\footnote{Making Snapshot Isolation Serializable, 2005, A. Fekete et al}. We will focus on \textit{soundness}.
+\end{frame}
+\begin{frame}
+	\begin{theorem}
+		\textbf{Completeness:} $$ \forall \mathcal{X} \in ExecSI. graph(\mathcal{X}) \in GraphSI$$
+	\end{theorem}
+	Closely follows from existing results\footnote{Making Snapshot Isolation Serializable, 2005, A. Fekete et al}. 
 \end{frame}
 
 \begin{frame}
-	\begin{block}{Objective}
+Consider SI execution, if we have a cycle in the dependency graph:
+\begin{itemize}
+	\item then it contains at least one $RW$ edge (other types of edges included on the $CO$)
+	\item if the $RW$ edge does not have an adjacent $RW$ edge, it has to be included in the $CO$:
+		\begin{figure}
+			\includegraphics[scale=0.3]{cycle}
+		\end{figure}
+	\item \alert{red} edge entailed by the $CO$ edge from $S$ to $T'$, and $VIS$ edge from $T'$ to $T$ (\textsc{Prefix}: $CO;VIS \subseteq VIS$ )
+	\item it violates \textsc{Ext} axiom, $T$ reads $x$ from $I$ though $S$ is visible and ordered after $I$ in the commit order.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\begin{theorem}
 		\textbf{Soundness:} $$ \forall \mathcal{G} \in GraphSI. \exists \mathcal{X} \in ExecSI. graph(\mathcal{X}) = \mathcal{G} $$ 	
-	\end{block}
+	\end{theorem}
 	\begin{block}{Proof sketch}
 		\begin{itemize}
 			\item Construct a basic \textbf{pre-execution} from $\mathcal{G}$
@@ -563,7 +594,7 @@
 			\item[$SO \cup WR \cup WW \subseteq VIS$] $VIS$ must conform with read/write dependecies of $\mathcal{G}$ and with $SO$ to hold \textsc{Session} axiom.
 			\item[$CO;VIS \subseteq VIS$] to ensure \textsc{Prefix} axiom.
 			\item[$VIS \subseteq CO$] to conform with SI definition - only committed transactions in snapshots.
-			\item[$CO;CO$] transitivity of $CO$
+			\item[$CO;CO \subseteq CO$] transitivity of $CO$
 			\item[$VIS;RW \subseteq CO$] to ensure \textsc{Ext} axiom
 		\end{description}
 	\end{itemize}
@@ -714,7 +745,7 @@
 			\item Any 2 anti dependency edges $(RW_\mathcal{G}\setminus \approx_\mathcal{G})$ are separated by at least one read $(WR_\mathcal{G}\setminus \approx_\mathcal{G})$ or write $(WW_\mathcal{G}\setminus \approx_\mathcal{G})$ dependency edge
 		\end{itemize}
 	\end{definition}
-	Intuitively, we want criteria for $DCG(\mathcal{G}))$ that translates into an invalid cycle on the spliced graph.
+	Intuitively, we want criteria for $DCG(\mathcal{G})$ that translates into an invalid cycle on the spliced graph.
 \end{frame}
 
 
@@ -849,7 +880,7 @@ We use the last theorem to derive the static analysis.
 
 \begin{frame}
 	\begin{theorem}
-		For any $\mathcal{G}$, we have $\mathcal{G} \in GraphSI \setminus GraphSER $ iff. $\mathcal{T}_\mathcal{G} \vDash \textsc{Int}$, $\mathcal{G}$ contains a cycle, and all its cycles have at least two adjacent anti-dependency edges.
+		For any $\mathcal{G}$, we have $\mathcal{G} \in GraphSI \setminus GraphSER $ iff $\mathcal{T}_\mathcal{G} \vDash \textsc{Int}$, $\mathcal{G}$ contains a cycle, and all its cycles have at least two adjacent anti-dependency edges.
 	\end{theorem}
 \end{frame}
 
@@ -936,7 +967,7 @@ We use the last theorem to derive the static analysis.
 
 \begin{frame}
 	\begin{theorem}
-		For any $\mathcal{G}$, we have $\mathcal{G} \in GraphPSI \setminus GraphSI $ iff. $\mathcal{T}_\mathcal{G} \vDash \textsc{Int}$, $\mathcal{G}$ contains at least one cycle with no adjacent anti-dependency edges, and all its cycles have at least two anti dependency edges.
+		For any $\mathcal{G}$, we have $\mathcal{G} \in GraphPSI \setminus GraphSI $ iff $\mathcal{T}_\mathcal{G} \vDash \textsc{Int}$, $\mathcal{G}$ contains at least one cycle with no adjacent anti-dependency edges, and all its cycles have at least two anti dependency edges.
 	\end{theorem}
 	
 	Static analysis:
